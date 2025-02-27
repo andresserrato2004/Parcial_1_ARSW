@@ -7,6 +7,7 @@ package edu.eci.arsw.blacklistvalidator;
 
 import edu.eci.arsw.spamkeywordsdatasource.HostBlacklistsDataSourceFacade;
 
+import javax.swing.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -19,6 +20,11 @@ public class HostBlackListsValidator {
 
     private static final int BLACK_LIST_ALARM_COUNT = 5;
 
+    public static int ocurrencesCount = 0;
+
+    public static int checkedListsCount = 0;
+
+    public static LinkedList<Integer> blackListOcurrences = new LinkedList<>();
     /**
      * Check the given host's IP address in all the available black lists,
      * and report it as NOT Trustworthy when such IP was reported in at least
@@ -32,50 +38,51 @@ public class HostBlackListsValidator {
      */
     public List<Integer> checkHost(String ipaddress, int N) {
 
-        LinkedList<Integer> blackListOcurrences = new LinkedList<>();
+
+        blackListOcurrences = new LinkedList<>();
 
 
-        int ocurrencesCount = 0;
+        LinkedList<BlackListCheck> balcklists = new LinkedList<>();
+
+
         int cantidadListasArevisarPorHilo;
         HostBlacklistsDataSourceFacade skds = HostBlacklistsDataSourceFacade.getInstance();
 
         cantidadListasArevisarPorHilo = skds.getRegisteredServersCount() / N;
 
-        for (int i = 1; i <= N; i++) {
+        for (int i = 0; i <= N; i++) {
             if (i == N &&!(N / 2 == 0) ) {
                 int resta =  skds.getRegisteredServersCount() - cantidadListasArevisarPorHilo*N ;
                 BlackListCheck black =  new BlackListCheck(ipaddress, (cantidadListasArevisarPorHilo * i) + resta);
+                balcklists.add(black);
                 black.start();
             } else {
                 BlackListCheck black = (new BlackListCheck(ipaddress, cantidadListasArevisarPorHilo * i));
+                balcklists.add(black);
                 black.start();
             }
-
         }
 
-        N = 3;
 
-        int prue = skds.getRegisteredServersCount() / N;
-
-
-        System.out.println(prue + "prue");
-        System.out.println(prue * 3 + "prue2");
-
-        int checkedListsCount = 0;
-
-        for (int i = 0; i < skds.getRegisteredServersCount() && ocurrencesCount < BLACK_LIST_ALARM_COUNT; i++) {
-            checkedListsCount++;
-
-
-            if (skds.isInBlackListServer(i, ipaddress)) {
-
-                System.out.println("i" + i);
-
-                blackListOcurrences.add(i);
-
-                ocurrencesCount++;
-            }
+        while (ocurrencesCount < BLACK_LIST_ALARM_COUNT){
+            System.out.println();
         }
+
+
+
+//        for (int i = 0; i < skds.getRegisteredServersCount() && ocurrencesCount < BLACK_LIST_ALARM_COUNT; i++) {
+//            checkedListsCount++;
+//
+//
+//            if (skds.isInBlackListServer(i, ipaddress)) {
+//
+//                System.out.println("i" + i);
+//
+//                blackListOcurrences.add(i);
+//
+//                ocurrencesCount++;
+//            }
+//        }
 
         if (ocurrencesCount >= BLACK_LIST_ALARM_COUNT) {
             skds.reportAsNotTrustworthy(ipaddress);
